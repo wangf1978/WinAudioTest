@@ -153,10 +153,23 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="combase.h" />
+    <ClInclude Include="cui_input_provider.h" />
+    <ClInclude Include="DeviceMenuNavigator.h" />
+    <ClInclude Include="input_manager.h" />
+    <ClInclude Include="MenuNavigator.h" />
+    <ClInclude Include="MMDeviceUtility.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="UI.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="combase.cpp" />
+    <ClCompile Include="cui_input_provider.cpp" />
+    <ClCompile Include="DeviceMenuNavigator.cpp" />
+    <ClCompile Include="input_manager.cpp" />
+    <ClCompile Include="MenuNavigator.cpp" />
+    <ClCompile Include="MMDeviceUtility.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

@@ -11,303 +11,9 @@
 #include <devpkey.h>
 #include <propkey.h>
 #include <conio.h>
+#include "MMDeviceUtility.h"
 
 using namespace Microsoft::WRL;
-
-#define DECL_TUPLE_A(x)		{x, #x}
-#define DECL_TUPLE_W(x)		{x, _T(#x)}
-
-#ifdef _UNICODE
-#define DECL_TUPLE(x)		DECL_TUPLE_W(##x)
-#else
-#define DECL_TUPLE(x)		DECL_TUPLE_A(##x)
-#endif
-
-using FLAG_NAME_PAIR = const std::tuple<INT, const WCHAR*>;
-
-static FLAG_NAME_PAIR Device_state_flag_names[] = {
-	DECL_TUPLE_W(DEVICE_STATE_ACTIVE),
-	DECL_TUPLE_W(DEVICE_STATE_DISABLED),
-	DECL_TUPLE_W(DEVICE_STATE_NOTPRESENT),
-	DECL_TUPLE_W(DEVICE_STATE_UNPLUGGED),
-};
-
-static FLAG_NAME_PAIR Data_flow_flag_names[] = {
-	DECL_TUPLE_W(eRender),
-	DECL_TUPLE_W(eCapture),
-	DECL_TUPLE_W(eAll),
-};
-
-static FLAG_NAME_PAIR Role_flag_names[] = {
-	DECL_TUPLE_W(eConsole),
-	DECL_TUPLE_W(eMultimedia),
-	DECL_TUPLE_W(eCommunications),
-};
-
-void GetFlagsDesc(INT nFlags, FLAG_NAME_PAIR* flag_names, size_t flag_count, WCHAR* szDesc, int ccDesc)
-{
-	bool bFirst = true;
-	int ccWritten = 0;
-	memset(szDesc, 0, ccDesc);
-	for (size_t i = 0; i < flag_count; i++)
-	{
-		if (nFlags&(std::get<0>(flag_names[i])))
-		{
-			ccWritten += _stprintf_s(szDesc + ccWritten, ccDesc - ccWritten, L"%s%s", !bFirst ? L" | " : L"", std::get<1>(flag_names[i]));
-			bFirst = false;
-		}
-	}
-}
-
-const WCHAR* GetEnumerateName(INT nEnumValue, FLAG_NAME_PAIR* enum_names, size_t enum_count)
-{
-	for (size_t i = 0; i < enum_count; i++)
-		if (nEnumValue == std::get<0>(enum_names[i]))
-			return std::get<1>(enum_names[i]);
-
-	return NULL;
-}
-
-int GetDeviceTitleName(IMMDevice* pDevice, WCHAR* wszTitleName, int ccTitleName)
-{
-	if (pDevice == nullptr)
-		return -1;
-
-	LPWSTR strID = nullptr;
-	if (FAILED(pDevice->GetId(&strID)))
-		return -1;
-
-	int ccWritten = swprintf_s(wszTitleName, ccTitleName, L"%s", strID);
-	CoTaskMemFree(strID);
-
-	ComPtr<IPropertyStore> spPropStore;
-	if (SUCCEEDED(pDevice->OpenPropertyStore(STGM_READ, &spPropStore)))
-	{
-		PROPVARIANT propvar;
-		PropVariantInit(&propvar);
-		if (SUCCEEDED(spPropStore->GetValue(*((const PROPERTYKEY*)&DEVPKEY_DeviceInterface_FriendlyName), &propvar)))
-		{
-			ccWritten += swprintf_s(wszTitleName + ccWritten, ccTitleName - ccWritten, L"/");
-			ccWritten += swprintf_s(wszTitleName + ccWritten, ccTitleName - ccWritten, L"%s", propvar.pwszVal);
-		}
-		PropVariantClear(&propvar);
-	}
-
-	return 0;
-}
-
-#define DECL_TUPLE_EX_W(x)		{*(const PROPERTYKEY*)&x, _T(#x)}
-
-static const std::tuple<const PROPERTYKEY, const WCHAR*> prop_key_names[] =
-{
-	DECL_TUPLE_W(PKEY_AudioEndpoint_FormFactor),
-	DECL_TUPLE_W(PKEY_AudioEndpoint_ControlPanelPageProvider),
-	DECL_TUPLE_W(PKEY_AudioEndpoint_Association),
-	DECL_TUPLE_W(PKEY_AudioEndpoint_PhysicalSpeakers),
-	DECL_TUPLE_W(PKEY_AudioEndpoint_GUID),
-	DECL_TUPLE_W(PKEY_AudioEndpoint_Disable_SysFx),
-	DECL_TUPLE_W(PKEY_AudioEndpoint_FullRangeSpeakers),
-	DECL_TUPLE_W(PKEY_AudioEndpoint_Supports_EventDriven_Mode),
-	DECL_TUPLE_W(PKEY_AudioEndpoint_JackSubType),
-	DECL_TUPLE_W(PKEY_AudioEndpoint_Default_VolumeInDb),
-	DECL_TUPLE_W(PKEY_AudioEngine_DeviceFormat),
-	DECL_TUPLE_W(PKEY_AudioEngine_OEMFormat),
-	DECL_TUPLE_W(PKEY_AudioEndpointLogo_IconEffects),
-	DECL_TUPLE_W(PKEY_AudioEndpointLogo_IconPath),
-	DECL_TUPLE_W(PKEY_AudioEndpointSettings_MenuText),
-	DECL_TUPLE_W(PKEY_AudioEndpointSettings_LaunchContract),
-	DECL_TUPLE_EX_W(DEVPKEY_NAME),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DeviceDesc),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_HardwareIds),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_CompatibleIds),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Service),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Class),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_ClassGuid),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Driver),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_ConfigFlags),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Manufacturer),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_FriendlyName),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_LocationInfo),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_PDOName),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Capabilities),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_UINumber),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_UpperFilters),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_LowerFilters),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_BusTypeGuid),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_LegacyBusType),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_BusNumber),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_EnumeratorName),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Security),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_SecuritySDS),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DevType),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Exclusive),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Characteristics),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Address),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_UINumberDescFormat),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_PowerData),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_RemovalPolicy),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_RemovalPolicyDefault),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_RemovalPolicyOverride),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_InstallState),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_LocationPaths),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_BaseContainerId),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_InstanceId),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DevNodeStatus),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_ProblemCode),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_EjectionRelations),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_RemovalRelations),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_PowerRelations),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_BusRelations),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Parent),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Children),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Siblings),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_TransportRelations),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_ProblemStatus),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Reported),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Legacy),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_ContainerId),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_InLocalMachineContainer),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Model),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_ModelId),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_FriendlyNameAttributes),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_ManufacturerAttributes),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_PresenceNotForDevice),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_SignalStrength),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_IsAssociateableByUserAction),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_ShowInUninstallUI),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Numa_Proximity_Domain),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DHP_Rebalance_Policy),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Numa_Node),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_BusReportedDeviceDesc),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_IsPresent),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_HasProblem),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_ConfigurationId),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_ReportedDeviceIdsHash),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_PhysicalDeviceLocation),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_BiosDeviceName),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DriverProblemDesc),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DebuggerSafe),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_PostInstallInProgress),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_Stack),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_ExtendedConfigurationIds),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_IsRebootRequired),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_FirmwareDate),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_FirmwareVersion),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_FirmwareRevision),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DependencyProviders),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DependencyDependents),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_SoftRestartSupported),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_ExtendedAddress),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_SessionId),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_InstallDate),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_FirstInstallDate),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_LastArrivalDate),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_LastRemovalDate),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DriverDate),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DriverVersion),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DriverDesc),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DriverInfPath),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DriverInfSection),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DriverInfSectionExt),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_MatchingDeviceId),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DriverProvider),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DriverPropPageProvider),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DriverCoInstallers),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_ResourcePickerTags),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_ResourcePickerExceptions),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DriverRank),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_DriverLogoLevel),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_NoConnectSound),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_GenericDriverInstalled),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_AdditionalSoftwareRequested),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_SafeRemovalRequired),
-	DECL_TUPLE_EX_W(DEVPKEY_Device_SafeRemovalRequiredOverride),
-	DECL_TUPLE_EX_W(DEVPKEY_DrvPkg_Model),
-	DECL_TUPLE_EX_W(DEVPKEY_DrvPkg_VendorWebSite),
-	DECL_TUPLE_EX_W(DEVPKEY_DrvPkg_DetailedDescription),
-	DECL_TUPLE_EX_W(DEVPKEY_DrvPkg_DocumentationLink),
-	DECL_TUPLE_EX_W(DEVPKEY_DrvPkg_Icon),
-	DECL_TUPLE_EX_W(DEVPKEY_DrvPkg_BrandingIcon),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_UpperFilters),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_LowerFilters),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_Security),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_SecuritySDS),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_DevType),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_Exclusive),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_Characteristics),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_Name),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_ClassName),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_Icon),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_ClassInstaller),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_PropPageProvider),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_NoInstallClass),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_NoDisplayClass),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_SilentInstall),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_NoUseClass),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_DefaultService),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_IconPath),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_DHPRebalanceOptOut),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceClass_ClassCoInstallers),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceInterface_FriendlyName),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceInterface_Enabled),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceInterface_ClassGuid),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceInterface_ReferenceString),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceInterface_Restricted),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceInterface_UnrestrictedAppCapabilities),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceInterfaceClass_DefaultInterface),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceInterfaceClass_Name),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_Address),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_DiscoveryMethod),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_IsEncrypted),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_IsAuthenticated),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_IsConnected),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_IsPaired),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_Icon),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_Version),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_Last_Seen),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_Last_Connected),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_IsShowInDisconnectedState),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_IsLocalMachine),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_MetadataPath),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_IsMetadataSearchInProgress),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_MetadataChecksum),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_IsNotInterestingForDisplay),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_LaunchDeviceStageOnDeviceConnect),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_LaunchDeviceStageFromExplorer),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_BaselineExperienceId),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_IsDeviceUniquelyIdentifiable),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_AssociationArray),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_DeviceDescription1),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_DeviceDescription2),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_HasProblem),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_IsSharedDevice),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_IsNetworkDevice),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_IsDefaultDevice),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_MetadataCabinet),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_RequiresPairingElevation),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_ExperienceId),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_Category),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_Category_Desc_Singular),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_Category_Desc_Plural),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_Category_Icon),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_CategoryGroup_Desc),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_CategoryGroup_Icon),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_PrimaryCategory),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_UnpairUninstall),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_RequiresUninstallElevation),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_DeviceFunctionSubRank),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_AlwaysShowDeviceAsConnected),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_ConfigFlags),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_PrivilegedPackageFamilyNames),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_CustomPrivilegedPackageFamilyNames),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_IsRebootRequired),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_FriendlyName),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_Manufacturer),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_ModelName),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_ModelNumber),
-	DECL_TUPLE_EX_W(DEVPKEY_DeviceContainer_InstallInProgress),
-	DECL_TUPLE_EX_W(DEVPKEY_DevQuery_ObjectType),
-};
 
 void PrintBuf(unsigned char* buf, int buf_size, int nLeadingSpace)
 {
@@ -357,11 +63,11 @@ int ShowDeviceProp(IPropertyStore* pPropStore, PROPERTYKEY propkey, size_t inden
 	wszIndent[ccActualIndent] = L'\0';
 
 	const WCHAR* wszPKeyname = nullptr;
-	for (size_t i = 0; i < _countof(prop_key_names); i++)
+	for (size_t i = 0; i < _countof(CMMDeviceUtility::prop_key_names); i++)
 	{
-		if (std::get<0>(prop_key_names[i]) == propkey)
+		if (std::get<0>(CMMDeviceUtility::prop_key_names[i]) == propkey)
 		{
-			wszPKeyname = std::get<1>(prop_key_names[i]);
+			wszPKeyname = std::get<1>(CMMDeviceUtility::prop_key_names[i]);
 			break;
 		}
 	}
@@ -525,7 +231,7 @@ int ShowDeviceProp(IPropertyStore* pPropStore, UINT idxProp, size_t indent = 0)
 
 int ShowDeviceInfo(IMMDevice* pDevice, size_t indent = 0)
 {
-	WCHAR wszTmp[1024];
+	WCHAR wszTmp[2048];
 	WCHAR wszIndent[1024];
 	HRESULT hr = S_OK;
 
@@ -552,7 +258,7 @@ int ShowDeviceInfo(IMMDevice* pDevice, size_t indent = 0)
 		return -1;
 	}
 
-	GetFlagsDesc(dwDeviceState, Device_state_flag_names, _countof(Device_state_flag_names), wszTmp, _countof(wszTmp));
+	CMMDeviceUtility::GetFlagsDesc(dwDeviceState, CMMDeviceUtility::Device_state_flag_names, _countof(CMMDeviceUtility::Device_state_flag_names), wszTmp, _countof(wszTmp));
 	_tprintf(_T("%sDefault render/multimedia audio end-point state: 0X%X(%s).\n"), wszIndent, dwDeviceState, wszTmp);
 
 	ComPtr<IPropertyStore> spPropStore;
@@ -566,8 +272,20 @@ int ShowDeviceInfo(IMMDevice* pDevice, size_t indent = 0)
 	DWORD cProps = 0;
 	hr = spPropStore->GetCount(&cProps);
 	for (DWORD i = 0; i < cProps; i++)
-		ShowDeviceProp(spPropStore.Get(), i, indent);
+	{
+		//ShowDeviceProp(spPropStore.Get(), i, indent);
 
+		PROPERTYKEY propkey;
+		if (FAILED(hr = spPropStore->GetAt(i, &propkey)))
+		{
+			printf("Failed to get the property key at position: %d of property store {hr: 0X%X}.\n", i, hr);
+			continue;
+		}
+
+		CMMDeviceUtility::GetDevicePropDesc(spPropStore.Get(), propkey, wszTmp, _countof(wszTmp), indent);
+		wprintf(L"%s", wszTmp);
+	}
+	
 	return 0;
 }
 
@@ -576,7 +294,7 @@ void PrintDeviceTitle(IMMDevice* pDevice, size_t indent = 0)
 	WCHAR wszTmp[1024];
 
 	memset(wszTmp, 0, sizeof(wszTmp));
-	GetDeviceTitleName(pDevice, wszTmp, _countof(wszTmp));
+	CMMDeviceUtility::GetDeviceTitleName(pDevice, wszTmp, _countof(wszTmp));
 
 	WCHAR wszFmtStr[64];
 	swprintf_s(wszFmtStr, _countof(wszFmtStr), L"%%%zus%%s:\n", indent);
@@ -687,7 +405,10 @@ public:
 		else if (riid == __uuidof(IMMNotificationClient))
 			*ppvObject = (IMMNotificationClient*)this;
 		else
+		{
+			*ppvObject = nullptr;
 			return E_NOINTERFACE;
+		}
 
 		AddRef();
 
@@ -728,7 +449,7 @@ public:
 		_In_  DWORD dwNewState)
 	{
 		WCHAR wszTmp[1024];
-		GetFlagsDesc(dwNewState, Device_state_flag_names, _countof(Device_state_flag_names), wszTmp, _countof(wszTmp));
+		CMMDeviceUtility::GetFlagsDesc(dwNewState, CMMDeviceUtility::Device_state_flag_names, _countof(CMMDeviceUtility::Device_state_flag_names), wszTmp, _countof(wszTmp));
 		wprintf(L"\n\n!!-->Device with id: %s change to new states: 0X%X (%s)\n",
 			pwstrDeviceId, dwNewState, wszTmp);
 		
@@ -792,8 +513,8 @@ public:
 		_In_  LPCWSTR pwstrDefaultDeviceId)
 	{
 		wprintf(L"\n\n-->Default Device is changed to %s {flow: %s(%d), role: %s(%d)}.\n", pwstrDefaultDeviceId,
-			GetEnumerateName(flow, Data_flow_flag_names, _countof(Data_flow_flag_names)), flow,
-			GetEnumerateName(role, Role_flag_names, _countof(Role_flag_names)), role);
+			CMMDeviceUtility::GetEnumerateName(flow, CMMDeviceUtility::Data_flow_flag_names, _countof(CMMDeviceUtility::Data_flow_flag_names)), flow,
+			CMMDeviceUtility::GetEnumerateName(role, CMMDeviceUtility::Role_flag_names, _countof(CMMDeviceUtility::Role_flag_names)), role);
 
 		ComPtr<IMMDevice> spDevice;
 		if (FAILED(m_spDeviceEnumerator->GetDevice(pwstrDefaultDeviceId, &spDevice)))
@@ -853,11 +574,52 @@ void PrintCUI(int menu_id = 0)
 
 int main()
 {
+	std::unordered_map<std::wstring, int> test;
+
+	LPWSTR a = new WCHAR[100];
+	wcscpy_s(a, 100, L"abc");
+
+	LPWSTR b = new WCHAR[100];
+	wcscpy_s(b, 100, L"abc");
+
+	test[a] = 1;
+
+	printf("unordered_map size: %d, count('abc'): %d.\n", test.size(), test.count(L"abc"));
+
+	test[b] = 2;
+
+	printf("unordered_map size: %d, count('abc'): %d.\n", test.size(), test.count(L"abc"));
+
+	if (test.find(L"abc") != test.end())
+		printf("test['abc']: %d.\n", test[L"abc"]);
+	else
+		printf("Failed to find 'abc'.\n");
+
+	std::unordered_map<int, std::set<std::wstring>> strs;
+
+	auto& va = strs[100];
+	va.insert(L"abcd");
+
+	va.insert(a);
+	va.insert(b);
+
+	for (auto iter = strs[100].cbegin(); iter != strs[100].cend(); iter++)
+	{
+		wprintf(L"%s\n", iter->c_str());
+	}
+
+	delete[] a;
+	delete[] b;
+
 	const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
 	const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
 	ComPtr<IMMDeviceEnumerator> spEnumerator;
 
-	CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+	if (FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED)))
+	{
+		printf("Failed to initialize the COM environment.\n");
+		return -1;
+	}
 
 	HRESULT hr = CoCreateInstance(
 		CLSID_MMDeviceEnumerator, NULL,
