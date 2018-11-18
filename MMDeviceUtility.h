@@ -107,6 +107,24 @@ using FLAG_NAME_PAIR = const std::tuple<INT, const WCHAR*>;
 	DECL_ENUM_ITEMW(x, KSDATAFORMAT_SUBTYPE_IEEE_FLOAT)\
 	DECL_ENUM_LAST_ITEMW(x, KSDATAFORMAT_SUBTYPE_WAVEFORMATEX, L"")))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
 
+#define IS_WAVEFORMATEX_IEC61937(x)	(\
+	(x) == KSDATAFORMAT_SUBTYPE_IEC61937_DOLBY_DIGITAL ||\
+	(x) == KSDATAFORMAT_SUBTYPE_IEC61937_WMA_PRO ||\
+	(x) == KSDATAFORMAT_SUBTYPE_IEC61937_DTS ||\
+	(x) == KSDATAFORMAT_SUBTYPE_IEC61937_MPEG1 ||\
+	(x) == KSDATAFORMAT_SUBTYPE_IEC61937_MPEG2 ||\
+	(x) == KSDATAFORMAT_SUBTYPE_IEC61937_MPEG3 ||\
+	(x) == KSDATAFORMAT_SUBTYPE_IEC61937_AAC ||\
+	(x) == KSDATAFORMAT_SUBTYPE_IEC61937_ATRAC ||\
+	(x) == KSDATAFORMAT_SUBTYPE_IEC61937_ONE_BIT_AUDIO ||\
+	(x) == KSDATAFORMAT_SUBTYPE_IEC61937_DOLBY_DIGITAL_PLUS ||\
+	(x) == KSDATAFORMAT_SUBTYPE_IEC61937_DOLBY_DIGITAL_PLUS_ATMOS ||\
+	(x) == KSDATAFORMAT_SUBTYPE_IEC61937_DTS_HD ||\
+	(x) == KSDATAFORMAT_SUBTYPE_IEC61937_DOLBY_MLP ||\
+	(x) == KSDATAFORMAT_SUBTYPE_IEC61937_DOLBY_MAT20 ||\
+	(x) == KSDATAFORMAT_SUBTYPE_IEC61937_DOLBY_MAT21 ||\
+	(x) == KSDATAFORMAT_SUBTYPE_IEC61937_DST)
+
 class CMMDeviceUtility
 {
 public:
@@ -233,18 +251,39 @@ public:
 					ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %s(0X%X)\n", wszIndent, szLeading, L"dwChannelMask", wszChMask, pFmtExt->dwChannelMask);
 				}
 				ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %s\n", wszIndent, szLeading, L"SubFormat", SUBFORMAT_FLAG_NAME(pFmtExt->SubFormat));
+
+				if (buf_size >= sizeof(WAVEFORMATEXTENSIBLE_IEC61937) && IS_WAVEFORMATEX_IEC61937(pFmtExt->SubFormat))
+				{
+					WAVEFORMATEXTENSIBLE_IEC61937* pFmtIEC = (WAVEFORMATEXTENSIBLE_IEC61937*)buf;
+					ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %u\n", wszIndent, szLeading, L"dwEncodedSamplesPerSec", pFmtIEC->dwEncodedSamplesPerSec);
+					ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %u\n", wszIndent, szLeading, L"dwEncodedChannelCount", pFmtIEC->dwEncodedChannelCount);
+					ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %u\n", wszIndent, szLeading, L"dwAverageBytesPerSec", pFmtIEC->dwAverageBytesPerSec);
+				}
 			}
 			break;
 		case WAVE_FORMAT_MPEG:
 			if (buf_size >= sizeof(MPEG1WAVEFORMAT))
 			{
-
+				MPEG1WAVEFORMAT* pMPEG1Fmt = (MPEG1WAVEFORMAT*)buf;
+				ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %u\n", wszIndent, szLeading, L"fwHeadLayer", pMPEG1Fmt->fwHeadLayer);
+				ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %u\n", wszIndent, szLeading, L"dwHeadBitrate", pMPEG1Fmt->dwHeadBitrate);
+				ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %u\n", wszIndent, szLeading, L"fwHeadMode", pMPEG1Fmt->fwHeadMode);
+				ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %u\n", wszIndent, szLeading, L"fwHeadModeExt", pMPEG1Fmt->fwHeadModeExt);
+				ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %u\n", wszIndent, szLeading, L"wHeadEmphasis", pMPEG1Fmt->wHeadEmphasis);
+				ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %u\n", wszIndent, szLeading, L"fwHeadFlags", pMPEG1Fmt->fwHeadFlags);
+				ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %u\n", wszIndent, szLeading, L"dwPTSLow", pMPEG1Fmt->dwPTSLow);
+				ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %u\n", wszIndent, szLeading, L"dwPTSHigh", pMPEG1Fmt->dwPTSHigh);
 			}
 			break;
 		case WAVE_FORMAT_MPEGLAYER3:
 			if (buf_size >= sizeof(MPEGLAYER3WAVEFORMAT))
 			{
-
+				MPEGLAYER3WAVEFORMAT* pMP3Fmt = (MPEGLAYER3WAVEFORMAT*)buf;
+				ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %u\n", wszIndent, szLeading, L"wID", pMP3Fmt->wID);
+				ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %u\n", wszIndent, szLeading, L"fdwFlags", pMP3Fmt->fdwFlags);
+				ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %u\n", wszIndent, szLeading, L"nBlockSize", pMP3Fmt->nBlockSize);
+				ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %u\n", wszIndent, szLeading, L"nFramesPerBlock", pMP3Fmt->nFramesPerBlock);
+				ccWritten += swprintf_s(wszTmp + ccWritten, _countof(wszTmp) - ccWritten, L"%s%s%20s: %u\n", wszIndent, szLeading, L"nCodecDelay", pMP3Fmt->nCodecDelay);
 			}
 			break;
 		}
