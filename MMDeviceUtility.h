@@ -168,7 +168,7 @@ public:
 		int nWritten = 0;
 		int nLeftChars = buf_size;
 		int nLines = nLeftChars / 16 + (nLeftChars % 16 == 0 ? 0 : 1);
-		int nRequiredCC = nLines*nLeadingSpace + buf_size * 4 /* "%02X " plus "%c" */ + 4 /* "- " plus "\n" plus "\0" */;
+		int nRequiredCC = nLines*nLeadingSpace + buf_size + nLines * 16 * 3 /* "%02X " plus "%c" */ + 4 /* "- " plus "\n" plus "\0" */;
 
 		if (ccBufDesc == 0 || szBufDesc == nullptr)
 			return nRequiredCC;
@@ -184,6 +184,9 @@ public:
 			nWritten += nLeadingSpace;
 			for (int j = 0; j < (nLeftChars < 16 ? nLeftChars : 16); j++)
 				nWritten += swprintf_s(szBufDesc + nWritten, ccBufDesc - nWritten, L"%02X ", buf[i * 16 + j]);
+
+			for (int j = 0; j < 16 - (nLeftChars < 16 ? nLeftChars : 16); j++)
+				nWritten += swprintf_s(szBufDesc + nWritten, ccBufDesc - nWritten, L"   ");
 
 			nWritten += swprintf_s(szBufDesc + nWritten, ccBufDesc - nWritten, L"- ");
 
