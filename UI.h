@@ -62,6 +62,7 @@ interface IInputManager : public IUnknown
 		/* [out] */	IInputConsumer** ppCsmr) PURE;
 	STDMETHOD(MoveToTop)(
 		/* [in] */	IInputConsumer* pCsmr) PURE;
+	STDMETHOD(RequestInput)() PURE;
 };
 
 // {12876A09-4D5A-407E-9781-8F4DD1312878}
@@ -77,11 +78,15 @@ interface IMenuPage : public IUnknown
 		/* [in[ */ NOTIFY_PARAM param1,
 		/* [in] */ NOTIFY_PARAM param2) PURE;
 	STDMETHOD(Show)() PURE;
+	STDMETHOD(SetUpperMenuPage)(
+		/* [in] */ IMenuPage* pMenuPage) PURE;
 	STDMETHOD(GetUpperMenuPage)(
 		/* [in] */ IMenuPage** ppMenuPage) PURE;
 	STDMETHOD_(NAVIMENU_ID, GetMenuID)() PURE;
 	STDMETHOD_(MENUPAGE_COOKIE, GetCookie)() PURE;
 	STDMETHOD_(BOOL, HotkeyInput)() PURE;
+	STDMETHOD(ShowInputPrompt)(
+		/* [in]  */ const WCHAR* szPrompt = nullptr) PURE;
 };
 
 // {B80ECE3D-DBC1-43C3-9D28-9D6DAED2DDC6}
@@ -102,4 +107,5 @@ interface IMenuNavigator : public IUnknown
 		/* [in[  */ IMenuPage* pUpperMenu) PURE;
 	STDMETHOD(IsSupport)(
 		/* [in]  */ NAVIMENU_ID idMenu) PURE;
+	STDMETHOD(RequestInput)() PURE;
 };

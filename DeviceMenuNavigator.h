@@ -13,6 +13,10 @@ AMP_DEFINE_GUID(NAVMENU_ID_DEVICE_LIST ,
 AMP_DEFINE_GUID(NAVMENU_ID_DEVICE ,
 	0xc92b9f27, 0x90ac, 0x444c, 0xba, 0x30, 0x24, 0x90, 0x93, 0x79, 0x7, 0x29);
 
+#define NAVMENU_NAMEW(x)	(\
+	((x) == NAVMENU_ID_DEVICE_LIST?L"Device List":\
+	((x) == NAVMENU_ID_DEVICE?L"Device":L"Uknown")))
+
 using MMDeviceFlowList = std::unordered_map<EDataFlow, std::set<std::wstring>>;
 using MMDefaultDevices = std::unordered_map<EDataFlow, std::unordered_map<ERole, std::wstring>>;
 
@@ -44,26 +48,62 @@ struct CDeviceCookie
 		// For NAVMENU_ID_DEVICE
 		struct
 		{
-			IMMDevice*				pDevice;
+			LPCWSTR					pwstrDeviceID;
 		};
 	};
+
+	bool Equal(NAVIMENU_ID idMenu, const CDeviceCookie* cookieDevice)
+	{
+		if (idMenu == NAVMENU_ID_DEVICE_LIST)
+		{
+			return true;
+		}
+		else if (idMenu == NAVMENU_ID_DEVICE)
+		{
+			if (cookieDevice == nullptr)
+				return false;
+
+			return _wcsicmp(pwstrDeviceID, cookieDevice->pwstrDeviceID) == 0 ? true : false;
+		}
+
+		return false;
+	}
 };
 
 class CDeviceMenuNavigator
 	: public CMenuNavigator
 	, public IMMNotificationClient
+	, public IInputConsumer
 {
 public:
 	CDeviceMenuNavigator(HRESULT* phr = nullptr);
 	virtual ~CDeviceMenuNavigator();
 
-	virtual HRESULT NonDelegatingQueryInterface(REFIID riid, void** ppvObject);
+	//
+	// IUnknown interface
+	//
+	DECLARE_IUNKNOWN
+	STDMETHOD(NonDelegatingQueryInterface)(REFIID riid, void** ppvObject);
 
 	//
 	// CMenuNavigator
 	//
 	STDMETHOD(IsSupport)(/* [in]  */ NAVIMENU_ID idMenu);
-	virtual HRESULT ActivateMenuPage(NAVIMENU_ID idMenu, MENUPAGE_COOKIE cookieMenuPage, IMenuPage** ppMenuPage);
+	STDMETHOD(RequestInput)();
+	virtual HRESULT ActivateMenuPage(
+		IMenuNavigator* pNavigator, NAVIMENU_ID idMenu, MENUPAGE_COOKIE cookieMenuPage, 
+		IMenuPage* pUpperMenuPage, IMenuPage** ppMenuPage);
+
+	//
+	// IInputConsumer interface
+	//
+	STDMETHOD(Open)(
+		/* [in] */ IInputManager* pMgr);
+	STDMETHOD(Close)();
+	STDMETHOD(Process)(
+		/* [in] */ const char* szInput);
+	STDMETHOD(OnFocus)();
+	STDMETHOD(OnLostFocus)();
 
 	//
 	// IMMNotificationClient interface
@@ -87,23 +127,12 @@ public:
 		_In_  LPCWSTR pwstrDeviceId,
 		_In_  const PROPERTYKEY key);
 
+	virtual HRESULT Run(NAVIMENU_ID idInitMenu, MENUPAGE_COOKIE cookieInitMenuPage);
+
 protected:
 	CDeviceContext					m_ctxDevice;
 
-
+	BOOL							m_bClosed = TRUE;
+	ComPtr<IInputManager>			m_spInputMgr;
 };
 
-class CDeviceListMenuPage : public CBaseMenuPage
-{
-public:
-	STDMETHOD(Process)(
-		/* [in] */ const char* szInput);
-	STDMETHOD(OnNotify)(
-		/* [in] */ unsigned int message,
-		/* [in[ */ NOTIFY_PARAM param1,
-		/* [in] */ NOTIFY_PARAM param2);
-	STDMETHOD(Show)();
-
-public:
-
-};

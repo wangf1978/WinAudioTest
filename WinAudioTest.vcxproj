@@ -155,7 +155,10 @@
   <ItemGroup>
     <ClInclude Include="combase.h" />
     <ClInclude Include="cui_input_provider.h" />
+    <ClInclude Include="DataUtil.h" />
+    <ClInclude Include="DeviceListMenuPage.h" />
     <ClInclude Include="DeviceMenuNavigator.h" />
+    <ClInclude Include="DeviceMenuPage.h" />
     <ClInclude Include="input_manager.h" />
     <ClInclude Include="MenuNavigator.h" />
     <ClInclude Include="MMDeviceUtility.h" />
@@ -166,7 +169,9 @@
   <ItemGroup>
     <ClCompile Include="combase.cpp" />
     <ClCompile Include="cui_input_provider.cpp" />
+    <ClCompile Include="DeviceListMenuPage.cpp" />
     <ClCompile Include="DeviceMenuNavigator.cpp" />
+    <ClCompile Include="DeviceMenuPage.cpp" />
     <ClCompile Include="input_manager.cpp" />
     <ClCompile Include="MenuNavigator.cpp" />
     <ClCompile Include="MMDeviceUtility.cpp" />

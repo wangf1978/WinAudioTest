@@ -20,7 +20,7 @@ public:
 	// IUnknown
 	//
 	DECLARE_IUNKNOWN
-	virtual HRESULT NonDelegatingQueryInterface(REFIID riid, void** ppvObject);
+	STDMETHOD(NonDelegatingQueryInterface)(REFIID riid, void** ppvObject);
 
 	//
 	// IMenuNavigator
@@ -37,11 +37,16 @@ public:
 		/* [in[  */ IMenuPage* pUpperMenu);
 	STDMETHOD(IsSupport)(
 		/* [in]  */ NAVIMENU_ID idMenu);
+	STDMETHOD(RequestInput)();
 
 protected:
-	virtual HRESULT ActivateMenuPage(NAVIMENU_ID idMenu, MENUPAGE_COOKIE cookieMenuPage, IMenuPage** ppMenuPage) {
+	virtual HRESULT ActivateMenuPage(
+		IMenuNavigator* pNavigator, NAVIMENU_ID idMenu, MENUPAGE_COOKIE cookieMenuPage, 
+		IMenuPage* pUpperMenuPage, IMenuPage** ppMenuPage) {
+		UNREFERENCED_PARAMETER(pNavigator);
 		UNREFERENCED_PARAMETER(idMenu);
 		UNREFERENCED_PARAMETER(cookieMenuPage);
+		UNREFERENCED_PARAMETER(pUpperMenuPage);
 		UNREFERENCED_PARAMETER(ppMenuPage);
 		return E_NOTIMPL;
 	}
@@ -51,7 +56,7 @@ protected:
 	std::list<ComPtr<IMenuPage>>	m_forwardPages;
 	ComPtr<IMenuPage>				m_currentPage;
 
-	std::mutex						m_mutexList;
+	std::recursive_mutex			m_mutexList;
 };
 
 class CBaseMenuPage
@@ -66,7 +71,7 @@ public:
 	// IUnknown Interface
 	//
 	DECLARE_IUNKNOWN
-	virtual HRESULT NonDelegatingQueryInterface(REFIID riid, void** ppvObject);
+	STDMETHOD(NonDelegatingQueryInterface)(REFIID riid, void** ppvObject);
 
 	//
 	// IMenuPage Interface
@@ -78,11 +83,21 @@ public:
 		/* [in[ */ NOTIFY_PARAM param1,
 		/* [in] */ NOTIFY_PARAM param2);
 	STDMETHOD(Show)();
+	STDMETHOD(SetUpperMenuPage)(
+		/* [in] */ IMenuPage* pMenuPage);
 	STDMETHOD(GetUpperMenuPage)(
 		/* [in] */ IMenuPage** ppMenuPage);
 	STDMETHOD_(NAVIMENU_ID, GetMenuID)();
 	STDMETHOD_(MENUPAGE_COOKIE, GetCookie)();
 	STDMETHOD_(BOOL, HotkeyInput)();
+	STDMETHOD(ShowInputPrompt)(
+		/* [in]  */ const WCHAR* szPrompt = nullptr);
+
+protected:
+	virtual void					ShowGeneralNavigationMenu();
+	virtual HRESULT					OnListSelect(UINT nSelIdx) = 0;
+	virtual UINT					GetListCount() = 0;
+
 
 protected:
 	std::mutex						m_mutex;

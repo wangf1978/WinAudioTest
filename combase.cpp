@@ -6,7 +6,7 @@ CComUnknown::CComUnknown() : m_cRef(0)
 	m_pUnknown = reinterpret_cast<IUnknown*>(static_cast<INonDelegatingCOMUnknown*>(this));
 }
 
-HRESULT CComUnknown::NonDelegatingQueryInterface(REFIID uuid, void** ppvObj)
+STDMETHODIMP CComUnknown::NonDelegatingQueryInterface(REFIID uuid, void** ppvObj)
 {
 	if (uuid == __uuidof(IUnknown))
 	{
@@ -22,7 +22,7 @@ HRESULT CComUnknown::NonDelegatingQueryInterface(REFIID uuid, void** ppvObj)
 	}
 }
 
-ULONG CComUnknown::NonDelegatingAddRef()
+STDMETHODIMP_(ULONG) CComUnknown::NonDelegatingAddRef()
 {
 #ifdef _DEBUG
 	LONG lRef = InterlockedIncrement(&m_cRef);
@@ -33,7 +33,7 @@ ULONG CComUnknown::NonDelegatingAddRef()
 	return m_cRef;
 }
 
-ULONG CComUnknown::NonDelegatingRelease()
+STDMETHODIMP_(ULONG) CComUnknown::NonDelegatingRelease()
 {
 	LONG lRef = InterlockedDecrement(&m_cRef);
 	assert(lRef >= 0);

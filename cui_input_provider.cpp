@@ -13,7 +13,7 @@ CCUIInputProvider::~CCUIInputProvider()
 //
 // interface IUnknown
 //
-HRESULT CCUIInputProvider::NonDelegatingQueryInterface(REFIID riid, void** ppv )
+STDMETHODIMP CCUIInputProvider::NonDelegatingQueryInterface(REFIID riid, void** ppv )
 {
 	if (riid == IID_IInputProvider)
 		return GetCOMInterface(static_cast<IInputProvider*>(this), ppv);

@@ -53,12 +53,12 @@ AMP_DEFINE_GUID(IID_IEBMLElement ,
 #ifndef INONDELEGATINGUNKNOWN_DEFINED
 #define INONDELEGATINGUNKNOWN_DEFINED
 /*!	@brief Define a non-delegation IUnknown interface for aggregation. */
-class INonDelegatingCOMUnknown
+DECLARE_INTERFACE(INonDelegatingCOMUnknown)
 {
 public:
-	virtual HRESULT NonDelegatingQueryInterface(REFIID riid, void **ppvObj) = 0;
-	virtual ULONG	NonDelegatingAddRef() = 0;
-	virtual ULONG	NonDelegatingRelease() = 0;
+	STDMETHOD(NonDelegatingQueryInterface)(REFIID riid, void **ppvObj) PURE;
+	STDMETHOD_(ULONG, NonDelegatingAddRef)() PURE;
+	STDMETHOD_(ULONG, NonDelegatingRelease)() PURE;
 };
 #endif
 
@@ -74,9 +74,9 @@ public:
 		return (IUnknown*)m_pUnknown;
 	}
 
-	virtual HRESULT NonDelegatingQueryInterface(REFIID uuid, void** ppvObj);
-	virtual ULONG	NonDelegatingAddRef();
-	virtual ULONG	NonDelegatingRelease();
+	STDMETHOD(NonDelegatingQueryInterface)(REFIID riid, void **ppvObj);
+	STDMETHOD_(ULONG, NonDelegatingAddRef)();
+	STDMETHOD_(ULONG, NonDelegatingRelease)();
 
 protected:
 	volatile long	m_cRef;								/* Number of reference counts */

@@ -10,10 +10,26 @@ CInputManager::~CInputManager()
 	Close();
 }
 
+HRESULT CInputManager::CreateInstance(REFIID riid, void** ppvObj)
+{
+	HRESULT hr = S_OK;
+	if (ppvObj == nullptr)
+		return E_POINTER;
+
+	CInputManager* pInputMgr = new CInputManager();
+	if (FAILED(hr = pInputMgr->QueryInterface(riid, ppvObj)))
+	{
+		delete pInputMgr;
+		return hr;
+	}
+
+	return hr;
+}
+
 //
 // interface IUnknown
 //
-HRESULT CInputManager::NonDelegatingQueryInterface(REFIID riid, void** ppvObject)
+STDMETHODIMP CInputManager::NonDelegatingQueryInterface(REFIID riid, void** ppvObject)
 {
 	if (riid == IID_IInputManager)
 		return GetCOMInterface(static_cast<IInputManager*>(this), ppvObject);
@@ -126,9 +142,8 @@ STDMETHODIMP CInputManager::MoveToTop(
 	{
 		if( pCsmr == *it )
 		{
-			if( it == m_vxCsmrs.begin() ) {
+			if( it == m_vxCsmrs.begin() )
 				return S_FALSE;
-			}
 
 			m_vxCsmrs.erase( it );
 			pCsmr->Release();
@@ -140,4 +155,18 @@ STDMETHODIMP CInputManager::MoveToTop(
 	}
 
 	return E_FAIL;
+}
+
+STDMETHODIMP CInputManager::RequestInput()
+{
+	if (m_spMainThreadInputProvider == nullptr)
+		return E_NOTIMPL;
+
+	return m_spMainThreadInputProvider->ProcessInput();
+}
+
+HRESULT CInputManager::SetMainThreadInputProvider(IInputProvider* pMainThreadInputProvider)
+{
+	m_spMainThreadInputProvider = pMainThreadInputProvider;
+	return S_OK;
 }

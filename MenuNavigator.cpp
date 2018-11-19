@@ -10,7 +10,7 @@ CMenuNavigator::~CMenuNavigator()
 {
 }
 
-HRESULT CMenuNavigator::NonDelegatingQueryInterface(REFIID riid, void** ppvObject)
+STDMETHODIMP CMenuNavigator::NonDelegatingQueryInterface(REFIID riid, void** ppvObject)
 {
 	if (riid == IID_IMenuNavigator)
 		return GetCOMInterface(static_cast<IMenuNavigator*>(this), ppvObject);
@@ -30,13 +30,14 @@ Front pages:
 */
 STDMETHODIMP CMenuNavigator::Back()
 {
-	std::lock_guard<std::mutex> guard(m_mutexList);
+	std::lock_guard<std::recursive_mutex> guard(m_mutexList);
 
 	if (m_backPages.size() == 0)
 		return E_FAIL;
 
 	auto& back = m_backPages.back();
-	m_forwardPages.push_front(m_currentPage);
+	if (m_currentPage != nullptr)
+		m_forwardPages.push_front(m_currentPage);
 	m_currentPage = back;
 	m_backPages.pop_back();
 
@@ -45,13 +46,14 @@ STDMETHODIMP CMenuNavigator::Back()
 
 STDMETHODIMP CMenuNavigator::Forward()
 {
-	std::lock_guard<std::mutex> guard(m_mutexList);
+	std::lock_guard<std::recursive_mutex> guard(m_mutexList);
 
 	if (m_forwardPages.size() == 0)
 		return E_FAIL;
 
 	auto& front = m_forwardPages.front();
-	m_backPages.push_back(m_currentPage);
+	if (m_currentPage != nullptr)
+		m_backPages.push_back(m_currentPage);
 	m_currentPage = front;
 	m_forwardPages.pop_front();
 
@@ -60,7 +62,7 @@ STDMETHODIMP CMenuNavigator::Forward()
 
 STDMETHODIMP CMenuNavigator::GoUp()
 {
-	std::lock_guard<std::mutex> guard(m_mutexList);
+	std::lock_guard<std::recursive_mutex> guard(m_mutexList);
 
 	if (m_currentPage == nullptr)
 		return E_FAIL;
@@ -80,7 +82,8 @@ STDMETHODIMP CMenuNavigator::GoUp()
 	}
 
 	m_forwardPages.clear();
-	m_backPages.push_back(m_currentPage);
+	if (m_currentPage != nullptr)
+		m_backPages.push_back(m_currentPage);
 	m_currentPage = spUpperPage;
 
 	return m_currentPage->Show();
@@ -88,7 +91,7 @@ STDMETHODIMP CMenuNavigator::GoUp()
 
 STDMETHODIMP CMenuNavigator::Refresh()
 {
-	std::lock_guard<std::mutex> guard(m_mutexList);
+	std::lock_guard<std::recursive_mutex> guard(m_mutexList);
 	if (m_currentPage == nullptr)
 		return E_FAIL;
 
@@ -98,7 +101,7 @@ STDMETHODIMP CMenuNavigator::Refresh()
 STDMETHODIMP CMenuNavigator::GetCurrentPage(
 	/* [out] */ IMenuPage** ppMenuPage)
 {
-	std::lock_guard<std::mutex> guard(m_mutexList);
+	std::lock_guard<std::recursive_mutex> guard(m_mutexList);
 
 	if (ppMenuPage == nullptr)
 		return E_POINTER;
@@ -111,11 +114,11 @@ STDMETHODIMP CMenuNavigator::Navigate(
 	/* [in]  */ MENUPAGE_COOKIE cookieMenuPage,
 	/* [in[  */ IMenuPage* pUpperMenu)
 {
-	std::lock_guard<std::mutex> guard(m_mutexList);
+	std::lock_guard<std::recursive_mutex> guard(m_mutexList);
 
 	// Try to activate the menu page with the specified menu_id and cookie
 	ComPtr<IMenuPage> spNewMenuPage;
-	HRESULT hr = ActivateMenuPage(idMenu, cookieMenuPage, &spNewMenuPage);
+	HRESULT hr = ActivateMenuPage(this, idMenu, cookieMenuPage, pUpperMenu, &spNewMenuPage);
 
 	if (FAILED(hr))
 	{
@@ -128,7 +131,8 @@ STDMETHODIMP CMenuNavigator::Navigate(
 	}
 
 	m_forwardPages.clear();
-	m_backPages.push_back(m_currentPage);
+	if (m_currentPage != nullptr)
+		m_backPages.push_back(m_currentPage);
 	m_currentPage = spNewMenuPage;
 
 	return m_currentPage->Show();
@@ -136,6 +140,11 @@ STDMETHODIMP CMenuNavigator::Navigate(
 
 STDMETHODIMP CMenuNavigator::IsSupport(
 	/* [in]  */ NAVIMENU_ID idMenu)
+{
+	return E_NOTIMPL;
+}
+
+STDMETHODIMP CMenuNavigator::RequestInput()
 {
 	return E_NOTIMPL;
 }
@@ -152,7 +161,7 @@ CBaseMenuPage::~CBaseMenuPage()
 {
 }
 
-HRESULT CBaseMenuPage::NonDelegatingQueryInterface(REFIID riid, void** ppvObject)
+STDMETHODIMP CBaseMenuPage::NonDelegatingQueryInterface(REFIID riid, void** ppvObject)
 {
 	if (riid == IID_IMenuPage)
 		return GetCOMInterface(static_cast<IMenuPage*>(this), ppvObject);
@@ -162,7 +171,46 @@ HRESULT CBaseMenuPage::NonDelegatingQueryInterface(REFIID riid, void** ppvObject
 
 STDMETHODIMP CBaseMenuPage::Process(const char* szInput)
 {
-	return E_NOTIMPL;
+	if (szInput == nullptr)
+		return E_POINTER;
+
+		HRESULT hr = S_OK;
+		switch (szInput[0])
+		{
+		case 'x':
+			break;
+		case 'b':
+			break;
+		case 'f':
+			break;
+		case 'p':
+			break;
+		default:
+		{
+			int64_t i64Val = -1LL;
+
+			// trim the \r\n characters at the end
+			size_t input_len = strlen(szInput);
+			size_t cbLeft = input_len;
+			while (cbLeft > 0 && (szInput[cbLeft - 1] == '\r' || szInput[cbLeft - 1] == '\n' || szInput[cbLeft - 1] == '\t' || szInput[cbLeft - 1] == ' '))
+				--cbLeft;
+
+			UINT32 nListCount = GetListCount();
+			bool bConvertRet = ConvertToInt((char*)szInput, (char*)szInput + cbLeft, i64Val);
+			if (!bConvertRet || i64Val <= 0 || (uint64_t)i64Val > (uint64_t)nListCount)
+			{
+				wprintf(L"Invalid input, please input the count from 1 to %zu!\n", nListCount);
+				ShowInputPrompt();
+				hr = E_INVALIDARG;
+			}
+			else
+			{
+				hr = OnListSelect((UINT)i64Val);
+			}
+		}
+	}
+
+	return hr;
 }
 
 STDMETHODIMP CBaseMenuPage::OnNotify(unsigned int message, NOTIFY_PARAM param1, NOTIFY_PARAM param2)
@@ -173,6 +221,12 @@ STDMETHODIMP CBaseMenuPage::OnNotify(unsigned int message, NOTIFY_PARAM param1, 
 STDMETHODIMP CBaseMenuPage::Show()
 {
 	return E_NOTIMPL;
+}
+
+STDMETHODIMP CBaseMenuPage::SetUpperMenuPage(IMenuPage* pMenuPage)
+{
+	m_spUpperMenuPage = pMenuPage;
+	return S_OK;
 }
 
 STDMETHODIMP CBaseMenuPage::GetUpperMenuPage(IMenuPage** ppMenuPage)
@@ -200,5 +254,24 @@ STDMETHODIMP_(MENUPAGE_COOKIE) CBaseMenuPage::GetCookie()
 STDMETHODIMP_(BOOL) CBaseMenuPage::HotkeyInput()
 {
 	return TRUE;
+}
+
+STDMETHODIMP CBaseMenuPage::ShowInputPrompt(const WCHAR* szPrompt)
+{
+	if (szPrompt == nullptr)
+		wprintf(L"\n>>> ");
+	else
+		wprintf(L"\n%s", szPrompt);
+
+	return S_OK;
+}
+
+void CBaseMenuPage::ShowGeneralNavigationMenu()
+{
+	wprintf(L"[x] Quit");
+	wprintf(L"    [b] Back");
+	wprintf(L"    [f] Forward");
+	wprintf(L"    [p] Go-up");
+	wprintf(L"\n");
 }
 

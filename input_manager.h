@@ -5,14 +5,21 @@
 
 #include <vector>
 #include "combase.h"
+#include <wrl/client.h>
+
+using namespace Microsoft::WRL;
 
 class CInputManager
-	: CComUnknown
+	: public CComUnknown
 	, public IInputManager
 {
-public:
+private:
 	CInputManager();
+
+public:
 	virtual ~CInputManager();
+
+	static HRESULT CreateInstance(REFIID riid, void** ppvObj);
 
 	/**
 	  * @interface IUnknown
@@ -20,7 +27,7 @@ public:
 	DECLARE_IUNKNOWN
 	/** @} */
 
-	virtual HRESULT NonDelegatingQueryInterface(REFIID riid, void** ppvObject);
+	STDMETHOD(NonDelegatingQueryInterface)(REFIID riid, void** ppvObject);
 
 	/**
 	  * @interface IInputManager
@@ -41,11 +48,15 @@ public:
 		/* [out] */	IInputConsumer** ppCsmr );
 	STDMETHOD(MoveToTop)(
 		/* [in] */	IInputConsumer* pCsmr);
+	STDMETHOD(RequestInput)();
 	/** @} */
+
+	virtual HRESULT SetMainThreadInputProvider(IInputProvider* pMainThreadInputProvider);
 
 protected:
 
-	std::vector<IInputConsumer*> m_vxCsmrs;
+	std::vector<IInputConsumer*>	m_vxCsmrs;
+	ComPtr<IInputProvider>			m_spMainThreadInputProvider;
 };
 
 #endif//__CLASS_INPUT_MANAGER_H__

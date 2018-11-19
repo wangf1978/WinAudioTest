@@ -22,7 +22,9 @@
 #include <tchar.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <new>
 #include "LibPlatform/platdef.h"
+#include "DataUtil.h"
 
 #ifdef _DEBUG
 #define AMP_Assert( expr ) if( !(expr) ) { \

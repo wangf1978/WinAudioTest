@@ -17,7 +17,7 @@ public:
 	DECLARE_IUNKNOWN
 	/** @} */
 
-	virtual HRESULT NonDelegatingQueryInterface(REFIID uuid, void** ppvObj);
+	STDMETHOD(NonDelegatingQueryInterface)(REFIID uuid, void** ppvObj);
 
 	/**
 	  * @interface IInputProvider
