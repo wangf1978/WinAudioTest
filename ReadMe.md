@@ -183,27 +183,27 @@ Press 'i' to show the current selected device properties:
 
 A device state is changed:
 ```
-!!-->[DeviceID: {0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}][DEVICE_STATE_ACTIVE] change to new states: 0X1 (DEVICE_STATE_ACTIVE)
+!!-->[DeviceID: {0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}][Cirrus Logic CS8409 (AB 57)] changed to new states: 0X1 (DEVICE_STATE_ACTIVE)
 
 
-!!-->[DeviceID: {0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}][{0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}/Cirrus Logic CS8409 (AB 57)] becomes default eRender eConsole device.
+!!-->[DeviceID: {0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}][Cirrus Logic CS8409 (AB 57)] became default eRender eConsole device.
 
 
-!!-->[DeviceID: {0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}][{0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}/Cirrus Logic CS8409 (AB 57)] becomes default eRender eMultimedia device.
+!!-->[DeviceID: {0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}][Cirrus Logic CS8409 (AB 57)] became default eRender eMultimedia device.
 
 
-!!-->[DeviceID: {0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}][{0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}/Cirrus Logic CS8409 (AB 57)] becomes default eRender eCommunications device.
+!!-->[DeviceID: {0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}][Cirrus Logic CS8409 (AB 57)] became default eRender eCommunications device.
 ```
 The property value of a device is changed:
 ```
-!!-->[DeviceID: {0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}][property: {B670D490-EACA-47F0-821E-BAAA5A8BF7F7}/02] value is changed to:
+!!-->[DeviceID: {0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}][Cirrus Logic CS8409 (AB 57)][property: {B670D490-EACA-47F0-821E-BAAA5A8BF7F7}/02] value is changed to:
     {B670D490-EACA-47F0-821E-BAAA5A8BF7F7}/02:
 
 
-!!-->[DeviceID: {0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}][property: {9C119480-DDC2-4954-A150-5BD240D454AD}/01] value is changed to:
+!!-->[DeviceID: {0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}][Cirrus Logic CS8409 (AB 57)][property: {9C119480-DDC2-4954-A150-5BD240D454AD}/01] value is changed to:
     {9C119480-DDC2-4954-A150-5BD240D454AD}/01: \\?\SWD#MMDEVAPI#{0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}#{e6327cad-dcec-4949-ae8a-991e976a79d2}
 
 
-!!-->[DeviceID: {0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}][property: {9C119480-DDC2-4954-A150-5BD240D454AD}/02] value is changed to:
+!!-->[DeviceID: {0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}][Cirrus Logic CS8409 (AB 57)][property: {9C119480-DDC2-4954-A150-5BD240D454AD}/02] value is changed to:
     {9C119480-DDC2-4954-A150-5BD240D454AD}/02: SWD\MMDEVAPI\{0.0.0.00000000}.{1b3fe298-8184-4b91-9e7a-a4ef3f70a5a6}
 ```
