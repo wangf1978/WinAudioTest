@@ -172,7 +172,23 @@ HRESULT CDeviceContext::OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWS
 {
 	std::lock_guard<std::recursive_mutex> guard(m_mutex);
 
-	m_DefaultDevices[flow][role] = pwstrDefaultDeviceId;
+	if (pwstrDefaultDeviceId == nullptr)
+	{
+		auto iter1 = m_DefaultDevices.find(flow);
+		if (iter1 != m_DefaultDevices.end())
+		{
+			auto iter2 = iter1->second.find(role);
+			if (iter2 != iter1->second.end())
+				iter1->second.erase(iter2);
+
+			if (iter1->second.size() == 0)
+				m_DefaultDevices.erase(iter1);
+		}
+	}
+	else
+	{
+		m_DefaultDevices[flow][role] = pwstrDefaultDeviceId;
+	}
 
 	return S_OK;
 }
@@ -374,14 +390,23 @@ HRESULT STDMETHODCALLTYPE CDeviceMenuNavigator::OnDefaultDeviceChanged(
 {
 	WCHAR wszTmp[1024] = { 0 };
 
-	ComPtr<IMMDevice> spDevice;
-	if (m_ctxDevice.spDeviceEnumerator != nullptr &&
-		SUCCEEDED(m_ctxDevice.spDeviceEnumerator->GetDevice(pwstrDefaultDeviceId, &spDevice)))
-		CMMDeviceUtility::GetDeviceTitleName(spDevice.Get(), wszTmp, _countof(wszTmp));
+	if (pwstrDefaultDeviceId == nullptr)
+	{
+		wprintf(L"\n\n!!--> Now no default device for %s direction and %s role.\n",
+			CMMDeviceUtility::GetEnumerateName(flow, CMMDeviceUtility::Data_flow_flag_names, _countof(CMMDeviceUtility::Data_flow_flag_names)),
+			CMMDeviceUtility::GetEnumerateName(role, CMMDeviceUtility::Role_flag_names, _countof(CMMDeviceUtility::Role_flag_names)));
+	}
+	else
+	{
+		ComPtr<IMMDevice> spDevice;
+		if (m_ctxDevice.spDeviceEnumerator != nullptr &&
+			SUCCEEDED(m_ctxDevice.spDeviceEnumerator->GetDevice(pwstrDefaultDeviceId, &spDevice)))
+			CMMDeviceUtility::GetDeviceTitleName(spDevice.Get(), wszTmp, _countof(wszTmp));
 
-	wprintf(L"\n\n!!-->[DeviceID: %s][%s] becomes default %s %s device.\n", pwstrDefaultDeviceId, wszTmp, 
-		CMMDeviceUtility::GetEnumerateName(flow, CMMDeviceUtility::Data_flow_flag_names, _countof(CMMDeviceUtility::Data_flow_flag_names)),
-		CMMDeviceUtility::GetEnumerateName(role, CMMDeviceUtility::Role_flag_names, _countof(CMMDeviceUtility::Role_flag_names)));
+		wprintf(L"\n\n!!-->[DeviceID: %s][%s] becomes default %s %s device.\n", pwstrDefaultDeviceId, wszTmp,
+			CMMDeviceUtility::GetEnumerateName(flow, CMMDeviceUtility::Data_flow_flag_names, _countof(CMMDeviceUtility::Data_flow_flag_names)),
+			CMMDeviceUtility::GetEnumerateName(role, CMMDeviceUtility::Role_flag_names, _countof(CMMDeviceUtility::Role_flag_names)));
+	}
 
 	m_ctxDevice.OnDefaultDeviceChanged(flow, role, pwstrDefaultDeviceId);
 
