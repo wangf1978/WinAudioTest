@@ -577,6 +577,31 @@ int CMMDeviceUtility::GetDeviceTitleName(IMMDevice* pDevice, WCHAR* wszTitleName
 	return 0;
 }
 
+int CMMDeviceUtility::GetDeviceFriendlyName(IMMDevice* pDevice, WCHAR* wszDeviceName, int ccDeviceName)
+{
+	if (wszDeviceName == nullptr || ccDeviceName <= 0)
+		return E_POINTER;
+
+	if (pDevice == nullptr)
+		return -1;
+
+	ComPtr<IPropertyStore> spPropStore;
+	if (SUCCEEDED(pDevice->OpenPropertyStore(STGM_READ, &spPropStore)))
+	{
+		PROPVARIANT propvar;
+		PropVariantInit(&propvar);
+		if (SUCCEEDED(spPropStore->GetValue(*((const PROPERTYKEY*)&DEVPKEY_DeviceInterface_FriendlyName), &propvar)) &&
+			propvar.vt == VT_LPWSTR && propvar.pwszVal != nullptr)
+		{
+			size_t ccNameLen = wcslen(propvar.pwszVal);
+			wcsncpy_s(wszDeviceName, ccDeviceName, propvar.pwszVal, AMP_MIN((size_t)ccDeviceName - 1, ccNameLen));
+		}
+		PropVariantClear(&propvar);
+	}
+
+	return 0;
+}
+
 int CMMDeviceUtility::GetDevicePropDesc(IPropertyStore* pPropStore, PROPERTYKEY propkey, WCHAR* szPropDesc, int ccPropDesc, size_t indent)
 {
 	HRESULT hr = S_OK;

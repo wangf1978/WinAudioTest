@@ -300,6 +300,7 @@ public:
 	}
 
 	static int GetDeviceTitleName(IMMDevice* pDevice, WCHAR* wszTitleName, int ccTitleName);
+	static int GetDeviceFriendlyName(IMMDevice* pDevice, WCHAR* wszDeviceName, int ccDeviceName);
 
 	static int GetDevicePropDesc(IPropertyStore* pPropStore, PROPERTYKEY propkey, WCHAR* szPropDesc, int ccPropDesc, size_t indent = 0);
 };

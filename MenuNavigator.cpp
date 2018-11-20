@@ -268,10 +268,11 @@ STDMETHODIMP CBaseMenuPage::ShowInputPrompt(const WCHAR* szPrompt)
 
 void CBaseMenuPage::ShowGeneralNavigationMenu()
 {
-	wprintf(L"[x] Quit");
-	wprintf(L"    [b] Back");
-	wprintf(L"    [f] Forward");
-	wprintf(L"    [p] Go-up");
+	wprintf(L"[x] Quit    ");
+	wprintf(L"[b] Back    ");
+	wprintf(L"[f] Forward    ");
+	wprintf(L"[p] Go-up    ");
+	wprintf(L"[?] Print this page");
 	wprintf(L"\n");
 }
 

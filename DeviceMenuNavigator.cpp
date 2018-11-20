@@ -337,10 +337,9 @@ HRESULT STDMETHODCALLTYPE CDeviceMenuNavigator::OnDeviceStateChanged(
 	ComPtr<IMMDevice> spDevice;
 	if (m_ctxDevice.spDeviceEnumerator != nullptr &&
 		SUCCEEDED(m_ctxDevice.spDeviceEnumerator->GetDevice(pwstrDeviceId, &spDevice)))
-		CMMDeviceUtility::GetDeviceTitleName(spDevice.Get(), wszTmp, _countof(wszTmp));
+		CMMDeviceUtility::GetDeviceFriendlyName(spDevice.Get(), wszTmp, _countof(wszTmp));
 
-	CMMDeviceUtility::GetFlagsDesc(dwNewState, CMMDeviceUtility::Device_state_flag_names, _countof(CMMDeviceUtility::Device_state_flag_names), wszTmp, _countof(wszTmp));
-	wprintf(L"\n\n!!-->[DeviceID: %s][%s] change to new states: 0X%X (%s)\n",
+	wprintf(L"\n\n!!-->[DeviceID: %s][%s] changed to new states: 0X%X (%s)\n",
 		pwstrDeviceId, wszTmp, dwNewState, 
 		CMMDeviceUtility::GetEnumerateName(dwNewState, CMMDeviceUtility::Device_state_flag_names, _countof(CMMDeviceUtility::Device_state_flag_names)));
 
@@ -357,7 +356,7 @@ HRESULT STDMETHODCALLTYPE CDeviceMenuNavigator::OnDeviceAdded(
 	ComPtr<IMMDevice> spDevice;
 	if (m_ctxDevice.spDeviceEnumerator != nullptr &&
 		SUCCEEDED(m_ctxDevice.spDeviceEnumerator->GetDevice(pwstrDeviceId, &spDevice)))
-		CMMDeviceUtility::GetDeviceTitleName(spDevice.Get(), wszTmp, _countof(wszTmp));
+		CMMDeviceUtility::GetDeviceFriendlyName(spDevice.Get(), wszTmp, _countof(wszTmp));
 
 	wprintf(L"\n\n!!-->[DeviceID: %s][%s] added.\n", pwstrDeviceId, wszTmp);
 
@@ -374,7 +373,7 @@ HRESULT STDMETHODCALLTYPE CDeviceMenuNavigator::OnDeviceRemoved(
 	ComPtr<IMMDevice> spDevice;
 	if (m_ctxDevice.spDeviceEnumerator != nullptr &&
 		SUCCEEDED(m_ctxDevice.spDeviceEnumerator->GetDevice(pwstrDeviceId, &spDevice)))
-		CMMDeviceUtility::GetDeviceTitleName(spDevice.Get(), wszTmp, _countof(wszTmp));
+		CMMDeviceUtility::GetDeviceFriendlyName(spDevice.Get(), wszTmp, _countof(wszTmp));
 
 	wprintf(L"\n\n!!-->[DeviceID: %s][%s] removed.\n", pwstrDeviceId, wszTmp);
 
@@ -401,9 +400,9 @@ HRESULT STDMETHODCALLTYPE CDeviceMenuNavigator::OnDefaultDeviceChanged(
 		ComPtr<IMMDevice> spDevice;
 		if (m_ctxDevice.spDeviceEnumerator != nullptr &&
 			SUCCEEDED(m_ctxDevice.spDeviceEnumerator->GetDevice(pwstrDefaultDeviceId, &spDevice)))
-			CMMDeviceUtility::GetDeviceTitleName(spDevice.Get(), wszTmp, _countof(wszTmp));
+			CMMDeviceUtility::GetDeviceFriendlyName(spDevice.Get(), wszTmp, _countof(wszTmp));
 
-		wprintf(L"\n\n!!-->[DeviceID: %s][%s] becomes default %s %s device.\n", pwstrDefaultDeviceId, wszTmp,
+		wprintf(L"\n\n!!-->[DeviceID: %s][%s] became default %s %s device.\n", pwstrDefaultDeviceId, wszTmp,
 			CMMDeviceUtility::GetEnumerateName(flow, CMMDeviceUtility::Data_flow_flag_names, _countof(CMMDeviceUtility::Data_flow_flag_names)),
 			CMMDeviceUtility::GetEnumerateName(role, CMMDeviceUtility::Role_flag_names, _countof(CMMDeviceUtility::Role_flag_names)));
 	}
@@ -425,7 +424,7 @@ HRESULT STDMETHODCALLTYPE CDeviceMenuNavigator::OnPropertyValueChanged(
 	if (m_ctxDevice.spDeviceEnumerator != nullptr &&
 		SUCCEEDED(m_ctxDevice.spDeviceEnumerator->GetDevice(pwstrDeviceId, &spDevice)))
 	{
-		CMMDeviceUtility::GetDeviceTitleName(spDevice.Get(), wszTmp, _countof(wszTmp));
+		CMMDeviceUtility::GetDeviceFriendlyName(spDevice.Get(), wszTmp, _countof(wszTmp));
 		ComPtr<IPropertyStore> spPropStore;
 		if (SUCCEEDED(spDevice->OpenPropertyStore(STGM_READ, &spPropStore)))
 			CMMDeviceUtility::GetDevicePropDesc(spPropStore.Get(), key, wszPropValueDesc, _countof(wszPropValueDesc), 4);
@@ -449,7 +448,7 @@ HRESULT STDMETHODCALLTYPE CDeviceMenuNavigator::OnPropertyValueChanged(
 			key.fmtid.Data4[0], key.fmtid.Data4[1], key.fmtid.Data4[2], key.fmtid.Data4[3],
 			key.fmtid.Data4[4], key.fmtid.Data4[5], key.fmtid.Data4[6], key.fmtid.Data4[7], key.pid);
 
-	wprintf(L"\n\n!!-->[DeviceID: %s][property: %s] value is changed to:\n", pwstrDeviceId, wszPropKeyName);
+	wprintf(L"\n\n!!-->[DeviceID: %s][%s][property: %s] value is changed to:\n", pwstrDeviceId, wszTmp, wszPropKeyName);
 	wprintf(L"%s", wszPropValueDesc);
 
 	m_ctxDevice.OnPropertyValueChanged(pwstrDeviceId, key);
@@ -512,6 +511,9 @@ STDMETHODIMP CDeviceMenuNavigator::Process(const char* szInput)
 				wprintf(L"Failed to go to the upper page {hr: 0X%X}.\n", hr);
 				spCurMenuPage->ShowInputPrompt();
 			}
+			break;
+		case '?':
+			spCurMenuPage->Show();
 			break;
 		}
 	}
